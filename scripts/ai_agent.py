@@ -31,13 +31,13 @@ class DQN(nn.Module):
 
 class AI_Brain():
 	def __init__(self, gamma, eps, lr, input_dims, batch_size, n_actions,
-		max_mem_size=100000, eps_end=0.01, eps_dec=0.00001):
+		max_mem_size=100000, eps_end=0.01, eps_dec=0.0001):
 			self.gamma = gamma
 			self.eps = eps
 			self.lr = lr
 			self.input_dims = input_dims
 			self.batch_size = batch_size
-			self.action_space = [-1, 0, 1]
+			self.action_space = [i for i in range(n_actions)]
 			self.mem_size = max_mem_size
 			self.batch_size = batch_size
 			self.mem_cntr = 0
@@ -68,7 +68,6 @@ class AI_Brain():
 			state = T.tensor(np.array([obs]), dtype=T.float32).to(self.Q_eval.device)
 			actions = self.Q_eval.forward(state)
 			action = int(T.argmax(actions).item())
-			action = self.action_space[action]
 		else:
 			action = int(np.random.choice(self.action_space))
 		
@@ -107,7 +106,7 @@ class AI_Brain():
 @exposed
 class AI_Agent(Node):
 	def _ready(self):
-		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(18*18+8),
+		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(5*5+8-1),
 						n_actions=3, batch_size=500)
 	
 	def get_action(self, obs):

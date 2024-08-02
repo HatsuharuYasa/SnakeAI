@@ -100,7 +100,7 @@ func generate_snake():
 	start_pos = Vector2(randi() % (cells-1) + 1, 8)
 	add_segment(start_pos, snake_head)
 	
-	for i in range(1, 3):
+	for i in range(1, 4):
 		add_segment(start_pos + Vector2(0, i), snake_segment)
 
 #Function to add a segment on the snake
@@ -122,10 +122,10 @@ func move_snake():
 			cur_dir = int(cur_dir)+1
 			can_move = false
 		
-		if cur_dir > Dir.LEFT:
-			cur_dir = Dir.UP
-		elif cur_dir < Dir.UP:
-			cur_dir = Dir.LEFT
+	if cur_dir > Dir.LEFT:
+		cur_dir = Dir.UP
+	elif cur_dir < Dir.UP:
+		cur_dir = Dir.LEFT
 		
 	cur_move = _move(cur_dir)
 
