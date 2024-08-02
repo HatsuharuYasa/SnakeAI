@@ -40,7 +40,7 @@ func get_observation():
 	for i in range(18):
 		for j in range(18):
 			if i == 0 or i == 17 or j == 0 or j == 17:
-				tiles[i][j] = 1
+				tiles[i][j] = -1
 	
 	#Acquire the snake data from the main script
 	var snake_data = snake_game.snake_data
@@ -54,7 +54,7 @@ func get_observation():
 		if i == 0:
 			tiles[snake_data[i][0]][snake_data[i][1]] = 1 #If it is the snake head
 		else:
-			tiles[snake_data[i][0]][snake_data[i][1]] = 1 #If it is the snake tail
+			tiles[snake_data[i][0]][snake_data[i][1]] = -1 #If it is the snake tail
 	
 	#Flatten the observation tiles to the actual observation
 	var observation = []
@@ -141,7 +141,7 @@ func env_step():
 	if done: #Snake ded
 		reward -= 100
 	if snake_game.score > prev_score: #Snake ate food
-		reward += 20
+		reward += 50
 	
 	if cur_dist < prev_dist: 
 		reward += 0.2
