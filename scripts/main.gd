@@ -5,9 +5,11 @@ export(PackedScene) var snake_head : PackedScene
 
 export(PackedScene) var fud_scene : PackedScene
 
+export(bool) var allow_input : bool = false
+
 #Other variables
 var offset : int = 32
-var game_started : bool = false
+var game_end : bool = true
 
 #Score variables
 var score : int
@@ -23,7 +25,7 @@ var snake_data : Array
 var snake : Array
 
 #Movement variables
-var start_pos = Vector2(8, 8)
+var start_pos : Vector2
 enum Dir {
 	UP, RIGHT, DOWN, LEFT
 }
@@ -37,12 +39,13 @@ var fud_pos : Vector2
 var regen_fud : bool = true
 var fud_spawned : bool = false
 
+#Time variables
+var time_passed : float = 0
+var wait_time : float = 0.1
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	new_game()
-
-func _process(_delta):
-	move_snake()
 
 #Return the vector direction based on the direction enumeration
 func _move(_movement) -> Vector2:
@@ -58,24 +61,23 @@ func _move(_movement) -> Vector2:
 #Starting a new game
 func new_game():
 	get_tree().paused = false
-	game_started = true
+	game_end = false
 	score = 0
 	$HUD.get_node("ScoreLabel").text = "Score: " + str(score)
 	can_move = true
 	cur_dir = Dir.UP
 	generate_snake()
 	generate_food()
-	$Timer.start()
 
 #Function to generate food
 func generate_food():
 	regen_fud = false
 	fud_spawned = true
 	fud_pos = Vector2(randi() % (cells-1) + 1, randi() % (cells-1) + 1)
+	#fud_pos = Vector2(10, 4)
 	fud_obj = fud_scene.instance()
 	fud_obj.position = (fud_pos * cell_size) - Vector2(offset, offset)
 	add_child(fud_obj)
-	print("Fud is generated: ", fud_obj.position)
 
 #Function to move food
 func move_food():
@@ -88,7 +90,6 @@ func move_food():
 				break
 	
 	fud_obj.position = (fud_pos * cell_size) - Vector2(offset, offset)
-	print("Fud is moved: ", fud_obj.position)
 
 #Function to generate a new snake
 func generate_snake():
@@ -96,6 +97,7 @@ func generate_snake():
 	snake_data.clear()
 	snake.clear()
 	
+	start_pos = Vector2(randi() % (cells-1) + 1, 8)
 	add_segment(start_pos, snake_head)
 	
 	for i in range(1, 3):
@@ -111,7 +113,8 @@ func add_segment(pos, segment_obj):
 
 #Function to define the movement of the snake
 func move_snake():
-	if can_move:
+	
+	if can_move and allow_input: #Choosing a direction for the snake if input is allowed
 		if Input.is_action_just_pressed("rotate_left"):
 			cur_dir = int(cur_dir)-1
 			can_move = false
@@ -124,34 +127,35 @@ func move_snake():
 		elif cur_dir < Dir.UP:
 			cur_dir = Dir.LEFT
 		
-		cur_move = _move(cur_dir)
+	cur_move = _move(cur_dir)
 
-
-func _on_Timer_timeout():
 	can_move = true
 	
 	snake_old = [] + snake_data
 	snake_data[0] += cur_move
+	check_self_eaten()
 	for i in range(len(snake_data)):
 		if i > 0:
 			snake_data[i] = snake_old[i-1]
 		snake[i].position = (snake_data[i] * cell_size) - Vector2(offset, offset)
 	
 	#print_coor(snake_data)
-	check_self_eaten()
 	check_out_of_bounds()
 	check_food_eaten()
 
+#Function to check wheter the snake is out of bound
 func check_out_of_bounds():
 	if snake_data[0].x <= 0 or snake_data[0].x > cells or snake_data[0].y <= 0 or snake_data[0].y > cells:
 		end_game()
 
+#Function to check whether the snake eat itself
 func check_self_eaten():
 	for i in range(1, len(snake_data)):
 		if snake_data[0] == snake_data[i]:
 			end_game()
 			break
 
+#Function to check whether to regenerate food or not
 func check_food_eaten():
 	if snake_data[0] == fud_pos:
 		score += 1
@@ -161,20 +165,10 @@ func check_food_eaten():
 		
 		add_segment(snake_old[-1], snake_segment)
 		
-
-func oppo_dir(_dir):
-	if _dir == Dir.UP:
-		return Dir.DOWN
-	elif _dir == Dir.DOWN:
-		return Dir.UP
-	elif _dir == Dir.RIGHT:
-		return Dir.LEFT
-	else:
-		return Dir.RIGHT
-
+#End game function
 func end_game():
-	$Timer.stop()
-	get_tree().paused = true
+	#get_tree().paused = true
+	game_end = true
 	print("Game over")
 	
 	#Free up some object from the memory
@@ -182,10 +176,8 @@ func end_game():
 		if snak:
 			snak.queue_free()
 	fud_obj.queue_free()
-	print("Memory cleared")
-	
-	new_game()
 
+#----------------Debugging function------------------
 func print_coor(data):
 	var report = ""
 	for c in data:
