@@ -12,7 +12,7 @@ var episodes : int = 0
 
 var scores = []
 var eps_history = []
-var total_score : int = 0
+var total_score : float = 0
 
 #Game variables
 var prev_score : int = 0
@@ -40,21 +40,21 @@ func get_observation():
 	for i in range(18):
 		for j in range(18):
 			if i == 0 or i == 17 or j == 0 or j == 17:
-				tiles[i][j] = -1
+				tiles[i][j] = 1
 	
 	#Acquire the snake data from the main script
 	var snake_data = snake_game.snake_data
 
 	#Mapping out the fud to the observation tiles
 	var fud = snake_game.fud_pos
-	tiles[fud.x][fud.y] = 2
+	tiles[fud.x][fud.y] = 1
 	
 	#Mapping out the snake on to the observation
 	for i in range(len(snake_data)):
 		if i == 0:
 			tiles[snake_data[i][0]][snake_data[i][1]] = 1 #If it is the snake head
 		else:
-			tiles[snake_data[i][0]][snake_data[i][1]] = -1 #If it is the snake tail
+			tiles[snake_data[i][0]][snake_data[i][1]] = 1 #If it is the snake tail
 	
 	#Flatten the observation tiles to the actual observation
 	var observation = []
@@ -123,7 +123,7 @@ func env_step():
 	var action = ai_agent.get_action(last_observation)
 	
 	var old_dir = snake_game.cur_dir
-	var new_dir = old_dir + action
+	var new_dir = old_dir + (action - 1)
 	
 	#Send the action to the game
 	snake_game.cur_dir = new_dir
@@ -141,14 +141,19 @@ func env_step():
 	if done: #Snake ded
 		reward -= 100
 	if snake_game.score > prev_score: #Snake ate food
-		reward += 10
+		reward += 20
 	
 	if cur_dist < prev_dist: 
 		reward += 0.2
-	elif cur_dist > prev_dist:
-		reward -= 0.2
+	elif cur_dist >= prev_dist:
+		reward -= 0.4
 	
-	reward += 0.1
+	reward -= 0.2
+	
+	for i in range(1, len(snake_game.snake_data)):
+		if snake_game.snake_data[0] == snake_game.snake_data[i]:
+			reward -= 200
+			break
 	
 	total_score += reward
 	
@@ -164,7 +169,7 @@ func play_game():
 	var action = ai_agent.get_action(last_observation)
 	
 	var old_dir = snake_game.cur_dir
-	var new_dir = old_dir + action
+	var new_dir = old_dir + (action - 1)
 	
 	snake_game.cur_dir = new_dir
 	snake_game.move_snake()

@@ -8,15 +8,17 @@ import torch.nn.functional as F
 import numpy as np
 
 class DQN(nn.Module):
-	def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions):
+	def __init__(self, lr, input_dims, fc1_dims, fc2_dims, fc3_dims, n_actions):
 		super(DQN, self).__init__()
 		self.fc1_dims = fc1_dims
 		self.fc2_dims = fc2_dims
+		self.fc3_dims = fc3_dims
 		self.input_dims = input_dims
 		self.n_actions = n_actions
 		self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
 		self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
-		self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+		self.fc3 = nn.Linear(self.fc2_dims, self.fc3_dims)
+		self.fc4 = nn.Linear(self.fc3_dims, self.n_actions)
 		self.opt = optim.Adam(self.parameters(), lr=lr)
 		self.loss = nn.MSELoss()
 		self.device = ('cuda' if T.cuda.is_available() else 'cpu')
@@ -25,19 +27,20 @@ class DQN(nn.Module):
 	def forward(self, state):
 		x = F.relu(self.fc1(state))
 		x = F.relu(self.fc2(x))
-		actions = self.fc3(x)
+		x = F.relu(self.fc3(x))
+		actions = self.fc4(x)
 		
 		return actions
 
 class AI_Brain():
 	def __init__(self, gamma, eps, lr, input_dims, batch_size, n_actions,
-		max_mem_size=100000, eps_end=0.01, eps_dec=0.00001):
+		max_mem_size=100000, eps_end=0.01, eps_dec=0.00005):
 			self.gamma = gamma
 			self.eps = eps
 			self.lr = lr
 			self.input_dims = input_dims
 			self.batch_size = batch_size
-			self.action_space = [-1, 0, 1]
+			self.action_space = [i for i in range(n_actions)]
 			self.mem_size = max_mem_size
 			self.batch_size = batch_size
 			self.mem_cntr = 0
@@ -45,7 +48,7 @@ class AI_Brain():
 			self.eps_dec = eps_dec
 			
 			self.Q_eval = DQN(self.lr, n_actions=n_actions, input_dims=self.input_dims,
-								fc1_dims = 512, fc2_dims = 512)
+								fc1_dims = 512, fc2_dims = 512, fc3_dims = 512)
 			self.state_memory = np.zeros((self.mem_size, self.input_dims), dtype=np.float32)
 			self.new_state_memory = np.zeros((self.mem_size, self.input_dims), dtype=np.float32)
 			
@@ -68,7 +71,6 @@ class AI_Brain():
 			state = T.tensor(np.array([obs]), dtype=T.float32).to(self.Q_eval.device)
 			actions = self.Q_eval.forward(state)
 			action = int(T.argmax(actions).item())
-			action = self.action_space[action]
 		else:
 			action = int(np.random.choice(self.action_space))
 		
