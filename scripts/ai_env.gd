@@ -82,7 +82,7 @@ func _process(delta):
 		print("Evaluating--------------")
 		var avg_score = 0
 		scores.append(total_score)
-		eps_history.append(ai_agent.get_epsilon)
+		eps_history.append(ai_agent.get_epsilon())
 		avg_score = average(scores.slice(scores.size()-100, scores.size(), 1, false))
 		
 		print('episode %d ' % (episodes + 1), 'score %.2f ' % total_score,
@@ -144,7 +144,7 @@ func env_step():
 		reward += 50
 	
 	if cur_dist < prev_dist: 
-		reward += 0.2
+		reward += 0.8
 	elif cur_dist >= prev_dist:
 		reward -= 0.4
 	
@@ -152,7 +152,7 @@ func env_step():
 	
 	for i in range(1, len(snake_game.snake_data)):
 		if snake_game.snake_data[0] == snake_game.snake_data[i]:
-			reward -= 200
+			reward -= 300
 			break
 	
 	total_score += reward

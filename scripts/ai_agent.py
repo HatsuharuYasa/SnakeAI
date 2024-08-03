@@ -20,7 +20,7 @@ class DQN(nn.Module):
 		self.fc3 = nn.Linear(self.fc2_dims, self.fc3_dims)
 		self.fc4 = nn.Linear(self.fc3_dims, self.n_actions)
 		self.opt = optim.Adam(self.parameters(), lr=lr)
-		self.loss = nn.MSELoss()
+		self.loss = nn.L1Loss()
 		self.device = ('cuda' if T.cuda.is_available() else 'cpu')
 		self.to(self.device)
 	
