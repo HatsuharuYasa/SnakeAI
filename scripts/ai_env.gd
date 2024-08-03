@@ -5,7 +5,6 @@ onready var ai_agent = $AI_Agent
 onready var snake_game = $SnakeGame
 
 #AI variables
-var new_observation
 var last_observation
 var done = false
 var episodes : int = 0
@@ -24,6 +23,7 @@ var tick_length : float = 0.1
 #First initialization
 func _ready():
 	last_observation = get_observation()
+	ai_agent.initiate_stacking(last_observation)
 
 #Function to get what the heck is happening on the game
 func get_observation():
@@ -56,25 +56,7 @@ func get_observation():
 		else:
 			tiles[snake_data[i][0]][snake_data[i][1]] = -1 #If it is the snake tail
 	
-	#Flatten the observation tiles to the actual observation
-	var observation = []
-	for i in range(18):
-		for j in range(18):
-			observation.append(tiles[i][j])
-	
-	#Append the clue of direction of fud
-	observation.append(1 if snake_data[0][0] < snake_game.fud_pos.x else 0)
-	observation.append(1 if snake_data[0][0] > snake_game.fud_pos.x else 0)
-	observation.append(1 if snake_data[0][1] < snake_game.fud_pos.y else 0)
-	observation.append(1 if snake_data[0][1] > snake_game.fud_pos.y else 0)
-	
-	#Append the direction of the
-	observation.append(1 if snake_game.cur_dir == snake_game.Dir.UP else 0)
-	observation.append(1 if snake_game.cur_dir == snake_game.Dir.RIGHT else 0)
-	observation.append(1 if snake_game.cur_dir == snake_game.Dir.DOWN else 0)
-	observation.append(1 if snake_game.cur_dir == snake_game.Dir.LEFT else 0)
-	
-	return observation
+	return tiles
 
 #Main loop
 func _process(delta):
@@ -94,6 +76,7 @@ func _process(delta):
 		done = false
 		snake_game.new_game()
 		last_observation = get_observation()
+		ai_agent.initiate_stacking(last_observation)
 		prev_score = 0
 		
 		show = (true if (episodes % 100 == 0) or (avg_score > 100) else false)
@@ -111,6 +94,7 @@ func _process(delta):
 		if not show:
 			snake_game.new_game()
 			last_observation = get_observation()
+			ai_agent.initiate_stacking(last_observation)
 			
 	else: #Train the AI
 		env_step()
@@ -119,8 +103,9 @@ func _process(delta):
 func env_step():
 	prev_score = snake_game.score
 	var prev_dist = manh_dist(Vector2(snake_game.snake_data[0][0], snake_game.snake_data[0][1]), snake_game.fud_pos)
+	
 	#Choose an action
-	var action = ai_agent.get_action(last_observation)
+	var action = ai_agent.get_action()
 	
 	var old_dir = snake_game.cur_dir
 	var new_dir = old_dir + (action - 1)
@@ -130,7 +115,7 @@ func env_step():
 	snake_game.move_snake()
 	
 	#Get the new observation
-	new_observation = get_observation()
+	var new_observation = get_observation()
 	
 	done = snake_game.game_end
 	
@@ -161,12 +146,14 @@ func env_step():
 	ai_agent.store_transition(last_observation, action, reward, new_observation, done)
 	ai_agent.learn()
 	
-	#Set the new observation as the last observation
 	last_observation = new_observation
 
 #Function for the AI to play the game
 func play_game():
-	var action = ai_agent.get_action(last_observation)
+	#Acquire observation
+	var o = get_observation()
+	#Choose an action
+	var action = ai_agent.get_action(o)
 	
 	var old_dir = snake_game.cur_dir
 	var new_dir = old_dir + (action - 1)
@@ -174,10 +161,7 @@ func play_game():
 	snake_game.cur_dir = new_dir
 	snake_game.move_snake()
 	
-	new_observation = get_observation()
-	
 	show = not snake_game.game_end
-	last_observation = new_observation
 
 func average(arr):
 	if arr.size() == 0:

@@ -20,7 +20,7 @@ class DQN(nn.Module):
 		self.fc3 = nn.Linear(self.fc2_dims, self.fc3_dims)
 		self.fc4 = nn.Linear(self.fc3_dims, self.n_actions)
 		self.opt = optim.Adam(self.parameters(), lr=lr)
-		self.loss = nn.L1Loss()
+		self.loss = nn.MSELoss()
 		self.device = ('cuda' if T.cuda.is_available() else 'cpu')
 		self.to(self.device)
 	
@@ -106,31 +106,61 @@ class AI_Brain():
 		
 		self.eps = self.eps - self.eps_dec if self.eps > self.eps_end else self.eps_end
 
+class FrameStack:
+	def __init__(self, stack_size, input_dims):
+		self.stack_size = stack_size
+		self.input_dims = input_dims
+		self.stack = np.zeros((stack_size, *input_dims), dtype=np.float32)
+	
+	def initiate_stacking(self, frame):
+		for i in range(self.stack_size):
+			self.stack[i, :, :] = frame
+	
+	def add_frame(self, frame):
+		self.stack = np.roll(self.stack, shift=-1, axis=0)
+		self.stack[-1, :, :] = frame
+	
+	def get_stack(self):
+		frame_stack = self.stack.flatten()
+		return frame_stack
+
+
 @exposed
 class AI_Agent(Node):
 	def _ready(self):
-		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(18*18+8),
-						n_actions=3, batch_size=500)
+		self.frame_stack = FrameStack(4, (18, 18))
+		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(18*18*4),
+						n_actions=3, batch_size=1000)
 	
-	def get_action(self, obs):
-		#Flatten the observation
-		o = np.array(obs, dtype=np.int32).flatten()
+	def get_action(self, obs=None):
+		#Append the new frame if its not NULL
+		if obs is not None:
+			self.frame_stack.add_frame(obs)
+		
+		#Get the current frame stack
+		o = self.frame_stack.get_stack()
 		
 		#Pass the observation to the brain
 		action = self.agent.do_action(o)
 		return action
 	
 	def store_transition(self, obs, action, reward, obs_, done):
-		#Flatten the observation
-		o = np.array(obs, dtype=np.int32).flatten()
-		o_ = np.array(obs_, dtype=np.int32).flatten()
+		#Acquire the current frame stack
+		s_o = self.frame_stack.get_stack()
+		#Append the new frame to the stack
+		self.frame_stack.add_frame(obs_)
+		#Acquire the new frame stack
+		s_o_ = self.frame_stack.get_stack()
 		
 		#Store the transition to the brain
-		self.agent.store_transition(o, action, reward, o_, done)
+		self.agent.store_transition(s_o, action, reward, s_o_, done)
 	
 	def learn(self):
 		self.agent.learn()
 	
 	def get_epsilon(self):
 		return self.agent.eps
+	
+	def initiate_stacking(self, frame):
+		self.frame_stack.initiate_stacking(frame)
 
