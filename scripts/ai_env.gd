@@ -30,21 +30,21 @@ func get_observation():
 	
 	#Acquire observation where the head of the snake is the center
 	var tiles = []
-	tiles.resize(5)
-	for i in range(5):
+	tiles.resize(9)
+	for i in range(9):
 		tiles[i] = []
-		tiles[i].resize(5)
-		for j in range(5):
+		tiles[i].resize(9)
+		for j in range(9):
 			tiles[i][j] = 0
 	
 	var snake_data = snake_game.snake_data
 	var fud_pos = snake_game.fud_pos
 	
-	var x_min = snake_data[0][0] - 2
-	var x_max = snake_data[0][0] + 2
+	var x_min = snake_data[0][0] - 4
+	var x_max = snake_data[0][0] + 4
 	
-	var y_min = snake_data[0][1] - 2
-	var y_max = snake_data[0][1] + 2
+	var y_min = snake_data[0][1] - 4
+	var y_max = snake_data[0][1] + 4
 	
 	for i in range(x_min, x_max + 1):
 		for j in range(y_min, y_max + 1):
@@ -60,8 +60,8 @@ func get_observation():
 	
 	var observation = []
 	
-	for i in range(5):
-		for j in range(5):
+	for i in range(9):
+		for j in range(9):
 			if i != 2 or j != 2:
 				observation.append(tiles[i][j])
 	
@@ -99,7 +99,7 @@ func _process(delta):
 		last_observation = get_observation()
 		prev_score = 0
 		
-		show = (true if (episodes % 100 == 0) or (avg_score > 100) else false)
+		show = (true if (episodes % 100 == 0) or (avg_score > 200) else false)
 		episodes += 1
 		return
 	

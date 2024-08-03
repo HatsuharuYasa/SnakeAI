@@ -31,7 +31,7 @@ class DQN(nn.Module):
 
 class AI_Brain():
 	def __init__(self, gamma, eps, lr, input_dims, batch_size, n_actions,
-		max_mem_size=100000, eps_end=0.01, eps_dec=0.0001):
+		max_mem_size=100000, eps_end=0.01, eps_dec=0.00005):
 			self.gamma = gamma
 			self.eps = eps
 			self.lr = lr
@@ -106,7 +106,7 @@ class AI_Brain():
 @exposed
 class AI_Agent(Node):
 	def _ready(self):
-		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(5*5+8-1),
+		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(9*9+8-1),
 						n_actions=3, batch_size=500)
 	
 	def get_action(self, obs):
