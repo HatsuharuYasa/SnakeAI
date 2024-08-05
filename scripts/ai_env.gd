@@ -61,7 +61,7 @@ func get_observation():
 		if i == 0:
 			for j in range(pixel_size):
 				for k in range(pixel_size):
-					tiles[snake_data[i][1]*pixel_size+k][snake_data[i][0]*pixel_size+j] = 0.5 #If it is the snake head
+					tiles[snake_data[i][1]*pixel_size+k][snake_data[i][0]*pixel_size+j] = 0.8 #If it is the snake head
 		else:
 			for j in range(pixel_size):
 				for k in range(pixel_size):

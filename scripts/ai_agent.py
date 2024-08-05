@@ -15,13 +15,16 @@ class DQN(nn.Module):
 		self.input_dims = input_dims
 		self.n_actions = n_actions
 		
-		self.conv1 = nn.Conv2d(in_channels=input_dims[0], out_channels=16, kernel_size=6, stride=4, padding=0)
-		self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
-		self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=0)
-		self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
-		self.conv3 = nn.Conv2d(in_channels=32, out_channels=32, kernel_size=2, stride=1, padding=0)
+		self.conv1 = nn.Conv2d(in_channels=input_dims[0], out_channels=32, kernel_size=3, stride=1, padding=0)
+		self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+		self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=0)
+		self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+		self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
+		self.pool3 = nn.MaxPool2d(kernel_size=4, stride=2)
+		self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
+		self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2)
 		
-		self.fc1 = nn.Linear(32 * 5 * 5, self.fc1_dims)
+		self.fc1 = nn.Linear(64 * 1 * 1, self.fc1_dims)
 		self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
 		self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
 		
@@ -33,10 +36,13 @@ class DQN(nn.Module):
 	
 	def forward(self, state):
 		x = F.relu(self.conv1(state))
-		#x = self.pool1(x)
+		x = self.pool1(x)
 		x = F.relu(self.conv2(x))
-		#x = self.pool2(x)
+		x = self.pool2(x)
 		x = F.relu(self.conv3(x))
+		x = self.pool3(x)
+		x = F.relu(self.conv4(x))
+		x = self.pool4(x)
 		x = x.view(x.size(0), -1)
 		x = F.relu(self.fc1(x))
 		#x = F.relu(self.fc2(x))
@@ -60,7 +66,7 @@ class AI_Brain():
 			self.eps_dec = eps_dec
 			
 			self.Q_eval = DQN(self.lr, n_actions=n_actions, input_dims=self.input_dims,
-								fc1_dims = 128, fc2_dims = 128)
+								fc1_dims = 512, fc2_dims = 512)
 			self.state_memory = np.zeros((self.mem_size, *self.input_dims), dtype=np.float32)
 			self.new_state_memory = np.zeros((self.mem_size, *self.input_dims), dtype=np.float32)
 			
@@ -140,9 +146,9 @@ class FrameStack:
 @exposed
 class AI_Agent(Node):
 	def _ready(self):
-		self.frame_stack = FrameStack(1, (54, 54))
-		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(1, 54, 54),
-						n_actions=3, batch_size=32)
+		self.frame_stack = FrameStack(3, (54, 54))
+		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(3, 54, 54),
+						n_actions=3, batch_size=500)
 	
 	def get_action(self, obs=None):
 		#Append the new frame if its not NULL
