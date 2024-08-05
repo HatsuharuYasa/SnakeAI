@@ -111,7 +111,7 @@ class AI_Agent(Node):
 	
 	def get_action(self, obs):
 		#Flatten the observation
-		o = np.array(obs, dtype=np.int32).flatten()
+		o = np.array(obs, dtype=np.float32).flatten()
 		
 		#Pass the observation to the brain
 		action = self.agent.do_action(o)
@@ -119,8 +119,8 @@ class AI_Agent(Node):
 	
 	def store_transition(self, obs, action, reward, obs_, done):
 		#Flatten the observation
-		o = np.array(obs, dtype=np.int32).flatten()
-		o_ = np.array(obs_, dtype=np.int32).flatten()
+		o = np.array(obs, dtype=np.float32).flatten()
+		o_ = np.array(obs_, dtype=np.float32).flatten()
 		
 		#Store the transition to the brain
 		self.agent.store_transition(o, action, reward, o_, done)

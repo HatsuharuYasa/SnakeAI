@@ -49,14 +49,14 @@ func get_observation():
 	for i in range(x_min, x_max + 1):
 		for j in range(y_min, y_max + 1):
 			if i <= 0 or j <= 0 or i > snake_game.cells or j > snake_game.cells:
-				tiles[i - x_min][j - y_min] = 1
+				tiles[i - x_min][j - y_min] = 1.0
 	
 	for s in snake_data:
 		if s[0] >= x_min and s[0] <= x_max and s[1] >= y_min and s[1] <= y_max:
-			tiles[s[0] - x_min][s[1] - y_min] = 1
+			tiles[s[0] - x_min][s[1] - y_min] = 1.0
 	
 	if fud_pos.x >= x_min and fud_pos.x <= x_max and fud_pos.y >= y_min and fud_pos.y <= y_max:
-		tiles[fud_pos.x - x_min][fud_pos.y - y_min] = 1
+		tiles[fud_pos.x - x_min][fud_pos.y - y_min] = 0.5
 	
 	var observation = []
 	
@@ -99,7 +99,7 @@ func _process(delta):
 		last_observation = get_observation()
 		prev_score = 0
 		
-		show = (true if (episodes % 100 == 0) or (avg_score > 200) else false)
+		show = (true if (episodes % 100 == 0) or (avg_score > 400) else false)
 		episodes += 1
 		return
 	
@@ -153,13 +153,10 @@ func env_step():
 		reward -= 0.2
 	
 	#Punish for eating itself
-	for i in range(1, len(snake_game.snake_data)):
-		if snake_game.snake_data[0] == snake_game.snake_data[i]:
-			print("chk")
-			reward -= 300
-			break
+	if snake_game.check_self_eaten():
+		reward -= 100
 	
-	reward -= 0.2
+	reward -= 0.4
 	
 	total_score += reward
 	
