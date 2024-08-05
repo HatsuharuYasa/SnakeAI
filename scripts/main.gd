@@ -133,11 +133,12 @@ func move_snake():
 	
 	snake_old = [] + snake_data
 	snake_data[0] += cur_move
-	check_self_eaten()
-	for i in range(len(snake_data)):
-		if i > 0:
-			snake_data[i] = snake_old[i-1]
-		snake[i].position = (snake_data[i] * cell_size) - Vector2(offset, offset)
+	var end = check_self_eaten()
+	if not end:
+		for i in range(len(snake_data)):
+			if i > 0:
+				snake_data[i] = snake_old[i-1]
+			snake[i].position = (snake_data[i] * cell_size) - Vector2(offset, offset)
 	
 	#print_coor(snake_data)
 	check_out_of_bounds()
@@ -153,7 +154,7 @@ func check_self_eaten():
 	for i in range(1, len(snake_data)):
 		if snake_data[0] == snake_data[i]:
 			end_game()
-			break
+			return true
 
 #Function to check whether to regenerate food or not
 func check_food_eaten():

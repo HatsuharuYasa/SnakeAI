@@ -27,35 +27,46 @@ func _ready():
 
 #Function to get what the heck is happening on the game
 func get_observation():
+	var pixel_size = 3
+	
 	#Initialize the observation tiles
 	var tiles = []
-	tiles.resize(18)
-	for i in range(18):
+	tiles.resize(18*pixel_size)
+	for i in range(18*pixel_size):
 		tiles[i] = []
-		tiles[i].resize(18)
-		for j in range(18):
+		tiles[i].resize(18*pixel_size)
+		for j in range(18*pixel_size):
 			tiles[i][j] = 0
+	
 	
 	#Mapping the border
 	for i in range(18):
 		for j in range(18):
 			if i == 0 or i == 17 or j == 0 or j == 17:
-				tiles[i][j] = -1
+				for k in range(pixel_size):
+					for l in range(pixel_size):
+						tiles[j*pixel_size+l][i*pixel_size+k] = 1.0
 	
 	#Acquire the snake data from the main script
 	var snake_data = snake_game.snake_data
 
 	#Mapping out the fud to the observation tiles
 	var fud = snake_game.fud_pos
-	tiles[fud.x][fud.y] = 1
+	for i in range(pixel_size):
+		for j in range(pixel_size):
+			tiles[fud.y*pixel_size+j][fud.x*pixel_size+i] = 0.5
 	
 	#Mapping out the snake on to the observation
 	for i in range(len(snake_data)):
 		if i == 0:
-			tiles[snake_data[i][0]][snake_data[i][1]] = 1 #If it is the snake head
+			for j in range(pixel_size):
+				for k in range(pixel_size):
+					tiles[snake_data[i][1]*pixel_size+k][snake_data[i][0]*pixel_size+j] = 0.5 #If it is the snake head
 		else:
-			tiles[snake_data[i][0]][snake_data[i][1]] = -1 #If it is the snake tail
-	
+			for j in range(pixel_size):
+				for k in range(pixel_size):
+					tiles[snake_data[i][1]*pixel_size+k][snake_data[i][0]*pixel_size+j] = 1.0 #If it is the snake tail
+
 	return tiles
 
 #Main loop
@@ -126,19 +137,17 @@ func env_step():
 	if done: #Snake ded
 		reward -= 100
 	if snake_game.score > prev_score: #Snake ate food
-		reward += 50
+		reward += 40
 	
 	if cur_dist < prev_dist: 
 		reward += 0.8
 	elif cur_dist >= prev_dist:
-		reward -= 0.4
+		reward -= 0.2
 	
-	reward -= 0.2
+	reward -= 0.4
 	
-	for i in range(1, len(snake_game.snake_data)):
-		if snake_game.snake_data[0] == snake_game.snake_data[i]:
-			reward -= 300
-			break
+	if snake_game.check_self_eaten():
+		reward -= 50
 	
 	total_score += reward
 	
@@ -150,16 +159,18 @@ func env_step():
 
 #Function for the AI to play the game
 func play_game():
-	#Acquire observation
-	var o = get_observation()
 	#Choose an action
-	var action = ai_agent.get_action(o)
+	var action = ai_agent.get_action()
 	
 	var old_dir = snake_game.cur_dir
 	var new_dir = old_dir + (action - 1)
 	
 	snake_game.cur_dir = new_dir
 	snake_game.move_snake()
+	
+	#Acquire new observation
+	var o = get_observation()
+	var _a = ai_agent.get_action(o)
 	
 	show = not snake_game.game_end
 

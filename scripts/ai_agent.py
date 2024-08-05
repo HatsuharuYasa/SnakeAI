@@ -8,27 +8,39 @@ import torch.nn.functional as F
 import numpy as np
 
 class DQN(nn.Module):
-	def __init__(self, lr, input_dims, fc1_dims, fc2_dims, fc3_dims, n_actions):
+	def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions):
 		super(DQN, self).__init__()
 		self.fc1_dims = fc1_dims
 		self.fc2_dims = fc2_dims
-		self.fc3_dims = fc3_dims
 		self.input_dims = input_dims
 		self.n_actions = n_actions
-		self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
+		
+		self.conv1 = nn.Conv2d(in_channels=input_dims[0], out_channels=16, kernel_size=6, stride=4, padding=0)
+		self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
+		self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=0)
+		self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
+		self.conv3 = nn.Conv2d(in_channels=32, out_channels=32, kernel_size=2, stride=1, padding=0)
+		
+		self.fc1 = nn.Linear(32 * 5 * 5, self.fc1_dims)
 		self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
-		self.fc3 = nn.Linear(self.fc2_dims, self.fc3_dims)
-		self.fc4 = nn.Linear(self.fc3_dims, self.n_actions)
+		self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+		
 		self.opt = optim.Adam(self.parameters(), lr=lr)
 		self.loss = nn.MSELoss()
 		self.device = ('cuda' if T.cuda.is_available() else 'cpu')
 		self.to(self.device)
 	
+	
 	def forward(self, state):
-		x = F.relu(self.fc1(state))
-		x = F.relu(self.fc2(x))
-		x = F.relu(self.fc3(x))
-		actions = self.fc4(x)
+		x = F.relu(self.conv1(state))
+		#x = self.pool1(x)
+		x = F.relu(self.conv2(x))
+		#x = self.pool2(x)
+		x = F.relu(self.conv3(x))
+		x = x.view(x.size(0), -1)
+		x = F.relu(self.fc1(x))
+		#x = F.relu(self.fc2(x))
+		actions = self.fc3(x)
 		
 		return actions
 
@@ -48,9 +60,9 @@ class AI_Brain():
 			self.eps_dec = eps_dec
 			
 			self.Q_eval = DQN(self.lr, n_actions=n_actions, input_dims=self.input_dims,
-								fc1_dims = 512, fc2_dims = 512, fc3_dims = 512)
-			self.state_memory = np.zeros((self.mem_size, self.input_dims), dtype=np.float32)
-			self.new_state_memory = np.zeros((self.mem_size, self.input_dims), dtype=np.float32)
+								fc1_dims = 128, fc2_dims = 128)
+			self.state_memory = np.zeros((self.mem_size, *self.input_dims), dtype=np.float32)
+			self.new_state_memory = np.zeros((self.mem_size, *self.input_dims), dtype=np.float32)
 			
 			self.action_memory = np.zeros(self.mem_size, dtype=np.int32)
 			self.reward_memory = np.zeros(self.mem_size, dtype=np.float32)
@@ -87,6 +99,7 @@ class AI_Brain():
 		
 		batch_index = np.arange(self.batch_size, dtype=np.int32)
 		
+		#Acquire the replay buffer
 		state_batch = T.tensor(self.state_memory[batch]).to(self.Q_eval.device)
 		new_state_batch = T.tensor(self.new_state_memory[batch]).to(self.Q_eval.device)
 		reward_batch = T.tensor(self.reward_memory[batch]).to(self.Q_eval.device)
@@ -121,16 +134,15 @@ class FrameStack:
 		self.stack[-1, :, :] = frame
 	
 	def get_stack(self):
-		frame_stack = self.stack.flatten()
-		return frame_stack
+		return self.stack
 
 
 @exposed
 class AI_Agent(Node):
 	def _ready(self):
-		self.frame_stack = FrameStack(4, (18, 18))
-		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(18*18*4),
-						n_actions=3, batch_size=1000)
+		self.frame_stack = FrameStack(1, (54, 54))
+		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(1, 54, 54),
+						n_actions=3, batch_size=32)
 	
 	def get_action(self, obs=None):
 		#Append the new frame if its not NULL
