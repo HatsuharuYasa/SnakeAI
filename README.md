@@ -20,4 +20,5 @@ Each branch with "ai_update" prefix has the similar neural network architecture 
 -  "ai_update": Naive approach where the obseration consist of the situation of the entire environments and pass it to a usual fully connected layer.
 -  "ai_update-v2": Heuristic based approach where the observation consists of information in the surrounding of the snake where the snake head is the center along with one-hot encoded current direction of the snake and the direction to the food
 -  "ai_update-v3": CNN based approach where the observation consist of stacked frame and where each frame contains the 'screenshot' or 'the projection' of the environment. It also utilizes convolutional network to train the agent.
+
 Side note: The only approach that currently work well is in the "ai_update-v2" branch
