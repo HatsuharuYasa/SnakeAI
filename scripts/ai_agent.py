@@ -15,14 +15,14 @@ class DQN(nn.Module):
 		self.input_dims = input_dims
 		self.n_actions = n_actions
 		
-		self.conv1 = nn.Conv2d(in_channels=input_dims[0], out_channels=32, kernel_size=3, stride=1, padding=0)
+		self.conv1 = nn.Conv2d(in_channels=input_dims[0], out_channels=16, kernel_size=7, stride=2, padding=3)
 		self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
-		self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=0)
+		self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=2, padding=2)
 		self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
-		self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
-		self.pool3 = nn.MaxPool2d(kernel_size=4, stride=2)
-		self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
-		self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2)
+		self.conv3 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
+		self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
+		#self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=2, padding=1)
+		#self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2)
 		
 		self.fc1 = nn.Linear(64 * 1 * 1, self.fc1_dims)
 		self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
@@ -41,8 +41,8 @@ class DQN(nn.Module):
 		x = self.pool2(x)
 		x = F.relu(self.conv3(x))
 		x = self.pool3(x)
-		x = F.relu(self.conv4(x))
-		x = self.pool4(x)
+		#x = F.relu(self.conv4(x))
+		#x = self.pool4(x)
 		x = x.view(x.size(0), -1)
 		x = F.relu(self.fc1(x))
 		#x = F.relu(self.fc2(x))
@@ -147,8 +147,8 @@ class FrameStack:
 class AI_Agent(Node):
 	def _ready(self):
 		self.frame_stack = FrameStack(3, (54, 54))
-		self.agent = AI_Brain(gamma=0.99, eps=1.0, lr=0.001, input_dims=(3, 54, 54),
-						n_actions=3, batch_size=500)
+		self.agent = AI_Brain(gamma=0.999, eps=1.0, lr=0.001, input_dims=(3, 54, 54),
+						n_actions=3, batch_size=600)
 	
 	def get_action(self, obs=None):
 		#Append the new frame if its not NULL
